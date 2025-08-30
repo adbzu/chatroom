@@ -35,42 +35,9 @@
     <h2>💬 ADBZU Chatroom</h2>
 
     <!-- Login -->
-   <!-- Login -->
-<div id="login">
-  <button id="googleSignInBtn">Sign in with Google</button>
-</div>
-
-<script>
-  // Use the already defined provider and auth
-  document.getElementById("googleSignInBtn").onclick = function() {
-    auth.signInWithPopup(provider)
-      .then(result => {
-        const user = result.user;
-        currentUser = user.displayName;
-        currentStatus = "Available";
-        // Save user info to DB
-        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat").style.display = "block";
-      })
-      .catch(error => console.error(error));
-  }
-
-  // Automatically show login if not signed in
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      currentUser = user.displayName;
-      currentStatus = "Available";
-      usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
-      document.getElementById("login").style.display = "none";
-      document.getElementById("chat").style.display = "block";
-    } else {
-      document.getElementById("login").style.display = "block";
-    }
-  });
-</script>
-
-
+    <div id="login">
+      <button id="googleSignInBtn">Sign in with Google</button>
+    </div>
 
     <!-- Chatroom -->
     <div id="chat">
@@ -84,17 +51,16 @@
   </div>
 
   <script>
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-	const firebaseConfig = {
-	  apiKey: "AIzaSyDMMVefI6x3LbU77MrkfYfrq2aCOIMwRzE",
-	  authDomain: "adbzu-chatroom.firebaseapp.com",
-	  databaseURL: "https://adbzu-chatroom-default-rtdb.firebaseio.com",
-	  projectId: "adbzu-chatroom",
-	  storageBucket: "adbzu-chatroom.firebasestorage.app",
-	  messagingSenderId: "737860189184",
-	  appId: "1:737860189184:web:07d9ff1206af8f22adece5",
-	  measurementId: "G-DF3WQ9WZZ3"
-	};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDMMVefI6x3LbU77MrkfYfrq2aCOIMwRzE",
+      authDomain: "adbzu-chatroom.firebaseapp.com",
+      databaseURL: "https://adbzu-chatroom-default-rtdb.firebaseio.com",
+      projectId: "adbzu-chatroom",
+      storageBucket: "adbzu-chatroom.firebasestorage.app",
+      messagingSenderId: "737860189184",
+      appId: "1:737860189184:web:07d9ff1206af8f22adece5",
+      measurementId: "G-DF3WQ9WZZ3"
+    };
     firebase.initializeApp(firebaseConfig);
 
     const auth = firebase.auth();
@@ -108,20 +74,21 @@
     let lastUser = "";
     let lastGroup = null;
 
-    function googleLogin() {
+    // Google login button
+    document.getElementById("googleSignInBtn").onclick = function() {
       auth.signInWithPopup(provider)
         .then(result => {
           const user = result.user;
           currentUser = user.displayName;
           currentStatus = "Available";
-          // Save user info to DB
           usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
           document.getElementById("login").style.display = "none";
           document.getElementById("chat").style.display = "block";
         })
         .catch(error => console.error(error));
-    }
+    };
 
+    // Check auth state
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user.displayName;
@@ -129,6 +96,8 @@
         usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
         document.getElementById("login").style.display = "none";
         document.getElementById("chat").style.display = "block";
+      } else {
+        document.getElementById("login").style.display = "block";
       }
     });
 
@@ -205,5 +174,3 @@
   </script>
 </body>
 </html>
-
-
