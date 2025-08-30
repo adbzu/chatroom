@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ADBZU Chatroom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial; background: #f0f8ff; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    #chat-container { background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 90%; max-width: 500px; padding: 20px; position: relative; }
+    h2 { color: #1e90ff; text-align: center; }
+    #messages { border: 1px solid #ccc; background: #e6f3ff; height: 300px; overflow-y: auto; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+    .msg-group { margin-bottom: 15px; display: flex; align-items: flex-start; gap: 8px; }
+    .msg-user { font-weight: bold; margin-bottom: 3px; font-size: 13px; }
+    .msg-text { border-radius: 10px; padding: 6px 10px; display: inline-block; margin: 2px 0; font-size: 14px; max-width: 75%; }
+    .my-msg { background: #1e90ff; color: white; align-self: flex-end; }
+    .other-msg { background: white; color: black; }
+    .time { font-size: 11px; color: gray; margin-left: 5px; }
+    #login, #chat { display: none; }
+    button { padding: 10px; border-radius: 10px; border: none; background: #1e90ff; color: white; cursor: pointer; }
+    button:hover { background: #187bcd; }
+    .msg-wrapper { display: flex; flex-direction: column; }
+    .my-wrapper { align-items: flex-end; }
+    .other-wrapper { align-items: flex-start; }
+    .avatar { width: 35px; height: 35px; border-radius: 50%; background: #1e90ff; color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; flex-shrink: 0; cursor: pointer; position: relative; }
+    .my-avatar { background: #187bcd; }
+    .profile-popup { position: absolute; background: white; border: 1px solid #ccc; border-radius: 8px; padding: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: none; font-size: 14px; z-index: 100; min-width: 150px; }
+    .profile-popup h4 { margin: 0 0 5px 0; color: #1e90ff; }
+    .profile-popup p { margin: 3px 0; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+  <div id="chat-container">
+    <h2>💬 ADBZU Chatroom</h2>
+
+    <!-- Login -->
+    <div id="login">
+      <button onclick="googleLogin()">Sign in with Google</button>
+    </div>
+
+    <!-- Chatroom -->
+    <div id="chat">
+      <div id="messages"></div>
+      <input id="message" placeholder="Type message..." onkeypress="if(event.key==='Enter'){sendMessage()}">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <!-- Profile popup -->
+    <div id="profilePopup" class="profile-popup"></div>
+  </div>
+
+  <script>
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+	const firebaseConfig = {
+	  apiKey: "AIzaSyDMMVefI6x3LbU77MrkfYfrq2aCOIMwRzE",
+	  authDomain: "adbzu-chatroom.firebaseapp.com",
+	  databaseURL: "https://adbzu-chatroom-default-rtdb.firebaseio.com",
+	  projectId: "adbzu-chatroom",
+	  storageBucket: "adbzu-chatroom.firebasestorage.app",
+	  messagingSenderId: "737860189184",
+	  appId: "1:737860189184:web:07d9ff1206af8f22adece5",
+	  measurementId: "G-DF3WQ9WZZ3"
+	};
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const db = firebase.database();
+    const messagesRef = db.ref("messages");
+    const usersRef = db.ref("users");
+
+    let currentUser = "";
+    let currentStatus = "Available";
+    let lastUser = "";
+    let lastGroup = null;
+
+    function googleLogin() {
+      auth.signInWithPopup(provider)
+        .then(result => {
+          const user = result.user;
+          currentUser = user.displayName;
+          currentStatus = "Available";
+          // Save user info to DB
+          usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
+          document.getElementById("login").style.display = "none";
+          document.getElementById("chat").style.display = "block";
+        })
+        .catch(error => console.error(error));
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user.displayName;
+        currentStatus = "Available";
+        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "block";
+      }
+    });
+
+    function getInitials(name) {
+      return name.charAt(0).toUpperCase();
+    }
+
+    function sendMessage() {
+      const message = document.getElementById("message").value;
+      if (currentUser && message.trim() !== "") {
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messagesRef.push({ name: currentUser, message, time: timestamp });
+        document.getElementById("message").value = "";
+      }
+    }
+
+    function showProfile(name, x, y) {
+      usersRef.child(name).once("value", snap => {
+        const user = snap.val();
+        const popup = document.getElementById("profilePopup");
+        popup.innerHTML = `<h4>${user.name}</h4><p>Status: ${user.status}</p>`;
+        popup.style.left = x + "px";
+        popup.style.top = y + "px";
+        popup.style.display = "block";
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("avatar")) {
+        document.getElementById("profilePopup").style.display = "none";
+      }
+    });
+
+    messagesRef.on("child_added", snap => {
+      const msg = snap.val();
+      const messagesDiv = document.getElementById("messages");
+
+      if (msg.name !== lastUser) {
+        lastGroup = document.createElement("div");
+        lastGroup.className = "msg-group";
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        if (msg.name === currentUser) avatar.classList.add("my-avatar");
+        avatar.innerText = getInitials(msg.name);
+        avatar.onclick = (event) => {
+          const rect = avatar.getBoundingClientRect();
+          showProfile(msg.name, rect.right + 5, rect.top);
+        };
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg-wrapper";
+        wrapper.classList.add(msg.name === currentUser ? "my-wrapper" : "other-wrapper");
+
+        const userEl = document.createElement("div");
+        userEl.className = "msg-user";
+        userEl.innerText = msg.name;
+
+        wrapper.appendChild(userEl);
+        lastGroup.appendChild(avatar);
+        lastGroup.appendChild(wrapper);
+        messagesDiv.appendChild(lastGroup);
+        lastUser = msg.name;
+      }
+
+      const textEl = document.createElement("div");
+      textEl.className = "msg-text";
+      textEl.classList.add(msg.name === currentUser ? "my-msg" : "other-msg");
+      textEl.innerHTML = `${msg.message} <span class="time">(${msg.time || ''})</span>`;
+      lastGroup.querySelector(".msg-wrapper").appendChild(textEl);
+
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  </script>
+</body>
+</html>
