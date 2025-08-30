@@ -36,8 +36,18 @@
 
     <!-- Login -->
     <div id="login">
-      <button onclick="googleLogin()">Sign in with Google</button>
-    </div>
+  <button id="googleSignInBtn">Sign in with Google</button>
+</div>
+
+<script>
+  document.getElementById("googleSignInBtn").onclick = function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).then(result => {
+      console.log("Logged in as:", result.user.displayName);
+    }).catch(err => console.error(err));
+  }
+</script>
+
 
     <!-- Chatroom -->
     <div id="chat">
@@ -172,3 +182,4 @@
   </script>
 </body>
 </html>
+
