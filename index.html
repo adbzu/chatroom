@@ -35,18 +35,41 @@
     <h2>💬 ADBZU Chatroom</h2>
 
     <!-- Login -->
-    <div id="login">
+   <!-- Login -->
+<div id="login">
   <button id="googleSignInBtn">Sign in with Google</button>
 </div>
 
 <script>
+  // Use the already defined provider and auth
   document.getElementById("googleSignInBtn").onclick = function() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).then(result => {
-      console.log("Logged in as:", result.user.displayName);
-    }).catch(err => console.error(err));
+    auth.signInWithPopup(provider)
+      .then(result => {
+        const user = result.user;
+        currentUser = user.displayName;
+        currentStatus = "Available";
+        // Save user info to DB
+        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "block";
+      })
+      .catch(error => console.error(error));
   }
+
+  // Automatically show login if not signed in
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user.displayName;
+      currentStatus = "Available";
+      usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
+      document.getElementById("login").style.display = "none";
+      document.getElementById("chat").style.display = "block";
+    } else {
+      document.getElementById("login").style.display = "block";
+    }
+  });
 </script>
+
 
 
     <!-- Chatroom -->
@@ -182,4 +205,5 @@
   </script>
 </body>
 </html>
+
 
