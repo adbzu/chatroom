@@ -74,30 +74,31 @@
     let lastUser = "";
     let lastGroup = null;
 
-    // Google login button
+    // Login button triggers signInWithPopup
     document.getElementById("googleSignInBtn").onclick = function() {
       auth.signInWithPopup(provider)
-        .then(result => {
-          const user = result.user;
-          currentUser = user.displayName;
-          currentStatus = "Available";
-          usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
-          document.getElementById("login").style.display = "none";
-          document.getElementById("chat").style.display = "block";
-        })
-        .catch(error => console.error(error));
+        .catch(error => console.error("Login error:", error));
     };
 
-    // Check auth state
+    // Auth state listener handles login, UI update, and DB write
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user.displayName;
         currentStatus = "Available";
-        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL });
+
+        // Save user info to database
+        usersRef.child(currentUser).set({
+          name: currentUser,
+          status: currentStatus,
+          photoURL: user.photoURL || ""
+        });
+
+        // Show chat UI
         document.getElementById("login").style.display = "none";
         document.getElementById("chat").style.display = "block";
       } else {
         document.getElementById("login").style.display = "block";
+        document.getElementById("chat").style.display = "none";
       }
     });
 
