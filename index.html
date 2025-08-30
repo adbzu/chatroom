@@ -74,26 +74,29 @@
     let lastUser = "";
     let lastGroup = null;
 
-    // Login button triggers signInWithPopup
+    // Use redirect method for desktop compatibility
     document.getElementById("googleSignInBtn").onclick = function() {
-      auth.signInWithPopup(provider)
-        .catch(error => console.error("Login error:", error));
+      auth.signInWithRedirect(provider);
     };
 
-    // Auth state listener handles login, UI update, and DB write
+    // Handle redirect result
+    auth.getRedirectResult().then(result => {
+      if (result.user) {
+        const user = result.user;
+        currentUser = user.displayName;
+        currentStatus = "Available";
+        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL || "" });
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "block";
+      }
+    }).catch(error => console.error(error));
+
+    // Auth state listener
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user.displayName;
         currentStatus = "Available";
-
-        // Save user info to database
-        usersRef.child(currentUser).set({
-          name: currentUser,
-          status: currentStatus,
-          photoURL: user.photoURL || ""
-        });
-
-        // Show chat UI
+        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL || "" });
         document.getElementById("login").style.display = "none";
         document.getElementById("chat").style.display = "block";
       } else {
@@ -166,12 +169,4 @@
 
       const textEl = document.createElement("div");
       textEl.className = "msg-text";
-      textEl.classList.add(msg.name === currentUser ? "my-msg" : "other-msg");
-      textEl.innerHTML = `${msg.message} <span class="time">(${msg.time || ''})</span>`;
-      lastGroup.querySelector(".msg-wrapper").appendChild(textEl);
-
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
-  </script>
-</body>
-</html>
+      textEl.classList.add(msg.name === currentUser ? "
