@@ -74,22 +74,23 @@
     let lastUser = "";
     let lastGroup = null;
 
-    // Sign-In with redirect
+    // Use popup login for desktop & mobile
     document.getElementById("googleSignInBtn").onclick = function() {
-      auth.signInWithRedirect(provider);
+      auth.signInWithPopup(provider)
+        .then(result => {
+          const user = result.user;
+          currentUser = user.displayName;
+          usersRef.child(currentUser).set({ name: currentUser, status: "Available", photoURL: user.photoURL || "" });
+          document.getElementById("login").style.display = "none";
+          document.getElementById("chat").style.display = "block";
+        })
+        .catch(error => {
+          console.error(error);
+          if (error.code === 'auth/popup-blocked') {
+            alert('Popup blocked! Allow popups for this site.');
+          }
+        });
     };
-
-    // Handle redirect result after login
-    auth.getRedirectResult().then(result => {
-      if (result.user) {
-        const user = result.user;
-        currentUser = user.displayName;
-        currentStatus = "Available";
-        usersRef.child(currentUser).set({ name: currentUser, status: currentStatus, photoURL: user.photoURL || "" });
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat").style.display = "block";
-      }
-    }).catch(error => console.error(error));
 
     // Auth state listener
     auth.onAuthStateChanged(user => {
